@@ -45,6 +45,7 @@
  * ------------------------------------------------------------------------------------------------
  */
 #include "bsp.h"
+#include "pp_utils.h"
 
 /* ------------------------------------------------------------------------------------------------
  *                                       Global Variables
@@ -65,7 +66,12 @@ extern uint8_t mrfiLnaHighGainMode;
  *                                        Radio Selection
  * ------------------------------------------------------------------------------------------------
  */
-#if (!defined MRFI_CC2520)
+#if (!defined MRFI_CC2520) && \
+    (!defined MRFI_CC1100) && \
+    (!defined MRFI_CC1101) && \
+    (!defined MRFI_CC1100E_470) && \
+    (!defined MRFI_CC1100E_950) && \
+    (!defined MRFI_CC2500)
   #error "ERROR: A compatible radio must be specified for the SmartRF05 board."
 /*
  *  Since the SmartRF05 board can support several different radios, the installed
@@ -75,6 +81,7 @@ extern uint8_t mrfiLnaHighGainMode;
  */
 #endif
 
+#if defined MRFI_CC2520
 
 /* ------------------------------------------------------------------------------------------------
  *                                 VREG_EN Pin Configuration
@@ -95,6 +102,52 @@ extern uint8_t mrfiLnaHighGainMode;
 #define MRFI_DRIVE_RESETN_PIN_LOW()          st( P5OUT &= ~BV(MRFI_RESETN_GPIO_BIT); ) /* atomic operation */
 #define MRFI_CONFIG_RESETN_PIN_AS_OUTPUT()   st( P5DIR |=  BV(MRFI_RESETN_GPIO_BIT); )
 
+#elif (defined MRFI_CC1100) || \
+      (defined MRFI_CC1101) || \
+      (defined MRFI_CC1100E_470) || \
+      (defined MRFI_CC1100E_950) || \
+      (defined MRFI_CC2500)
+
+
+/* ------------------------------------------------------------------------------------------------
+ *                                      GDO0 Pin Configuration
+ * ------------------------------------------------------------------------------------------------
+ */
+#define __mrfi_GDO0_BIT__                     0
+#define __mrfi_GDO0_PORT__                    1
+#define MRFI_CONFIG_GDO0_PIN_AS_INPUT()       /* nothing required */
+#define MRFI_GDO0_PIN_IS_HIGH()               ( INFIX( P, __mrfi_GDO0_PORT__, IN ) & BV(__mrfi_GDO0_BIT__))
+
+#define MRFI_GDO0_INT_VECTOR                  INFIX( PORT, __mrfi_GDO0_PORT__, _VECTOR )
+#define MRFI_ENABLE_GDO0_INT()                st( INFIX( P, __mrfi_GDO0_PORT__, IE )  |=  BV(__mrfi_GDO0_BIT__); ) /* atomic operation */
+#define MRFI_DISABLE_GDO0_INT()               st( INFIX( P, __mrfi_GDO0_PORT__, IE )  &= ~BV(__mrfi_GDO0_BIT__); ) /* atomic operation */
+#define MRFI_GDO0_INT_IS_ENABLED()             (  INFIX( P, __mrfi_GDO0_PORT__, IE )  &   BV(__mrfi_GDO0_BIT__) )
+#define MRFI_CLEAR_GDO0_INT_FLAG()            st( INFIX( P, __mrfi_GDO0_PORT__, IFG ) &= ~BV(__mrfi_GDO0_BIT__); ) /* atomic operation */
+#define MRFI_GDO0_INT_FLAG_IS_SET()            (  INFIX( P, __mrfi_GDO0_PORT__, IFG ) &   BV(__mrfi_GDO0_BIT__) )
+#define MRFI_CONFIG_GDO0_RISING_EDGE_INT()    st( INFIX( P, __mrfi_GDO0_PORT__, IES ) &= ~BV(__mrfi_GDO0_BIT__); ) /* atomic operation */
+#define MRFI_CONFIG_GDO0_FALLING_EDGE_INT()   st( INFIX( P, __mrfi_GDO0_PORT__, IES ) |=  BV(__mrfi_GDO0_BIT__); ) /* atomic operation */
+
+
+/* ------------------------------------------------------------------------------------------------
+ *                                      GDO2 Pin Configuration
+ * ------------------------------------------------------------------------------------------------
+ */
+#define __mrfi_GDO2_BIT__                     1
+#define __mrfi_GDO2_PORT__                    1
+#define MRFI_CONFIG_GDO2_PIN_AS_INPUT()       /* nothing required */
+#define MRFI_GDO2_PIN_IS_HIGH()               ( INFIX( P, __mrfi_GDO2_PORT__, IN ) & BV(__mrfi_GDO2_BIT__))
+
+#define MRFI_GDO2_INT_VECTOR                  INFIX( PORT, __mrfi_GDO2_PORT__, _VECTOR )
+#define MRFI_ENABLE_GDO2_INT()                st( INFIX( P, __mrfi_GDO2_PORT__, IE )  |=  BV(__mrfi_GDO2_BIT__); ) /* atomic operation */
+#define MRFI_DISABLE_GDO2_INT()               st( INFIX( P, __mrfi_GDO2_PORT__, IE )  &= ~BV(__mrfi_GDO2_BIT__); ) /* atomic operation */
+#define MRFI_GDO2_INT_IS_ENABLED()             (  INFIX( P, __mrfi_GDO2_PORT__, IE )  &   BV(__mrfi_GDO2_BIT__) )
+#define MRFI_CLEAR_GDO2_INT_FLAG()            st( INFIX( P, __mrfi_GDO2_PORT__, IFG ) &= ~BV(__mrfi_GDO2_BIT__); ) /* atomic operation */
+#define MRFI_GDO2_INT_FLAG_IS_SET()            (  INFIX( P, __mrfi_GDO2_PORT__, IFG ) &   BV(__mrfi_GDO2_BIT__) )
+#define MRFI_CONFIG_GDO2_RISING_EDGE_INT()    st( INFIX( P, __mrfi_GDO2_PORT__, IES ) &= ~BV(__mrfi_GDO2_BIT__); ) /* atomic operation */
+#define MRFI_CONFIG_GDO2_FALLING_EDGE_INT()   st( INFIX( P, __mrfi_GDO2_PORT__, IES ) |=  BV(__mrfi_GDO2_BIT__); ) /* atomic operation */
+
+
+#endif
 
 /* ------------------------------------------------------------------------------------------------
  *                                      SPI Configuration
@@ -163,6 +216,8 @@ typedef bspIState_t mrfiSpiIState_t;
 #endif
 */
 
+#if defined MRFI_CC2520
+
 #define MRFI_BOARD_CONFIG_RADIO_GPIO() st(                                     \
     /* Program the radio GPIO_0 to output TX_FRM_DONE Exception */             \
     mrfiSpiWriteReg(GPIOCTRL0, 0x02);                                          \
@@ -211,10 +266,11 @@ typedef bspIState_t mrfiSpiIState_t;
                                                   P1IES &= ~BV(__mrfi_FIFOP_BIT); )
 
 /* Port control macros */
-#define MRFI_ENABLE_RX_INTERRUPT()     (P1IE  |=  BV(__mrfi_FIFOP_BIT));
-#define MRFI_DISABLE_RX_INTERRUPT()    (P1IE  &= ~BV(__mrfi_FIFOP_BIT));
-#define MRFI_CLEAR_RX_INTERRUPT_FLAG() (P1IFG &= ~BV(__mrfi_FIFOP_BIT));
+#define MRFI_ENABLE_RX_INTERRUPT()     ( P1IE  |=  ( ( rx_isr_context == true ) ? 0 : BV(__mrfi_FIFOP_BIT) ) );
+#define MRFI_DISABLE_RX_INTERRUPT()    ( P1IE  &= ~( ( rx_isr_context == true ) ? 0 : BV(__mrfi_FIFOP_BIT) ) );
+#define MRFI_CLEAR_RX_INTERRUPT_FLAG() ( P1IFG &= ~BV(__mrfi_FIFOP_BIT) );
 
+#endif // defined MRFI_CC2520
 
 /*
  *  Radio SPI Specifications
@@ -245,6 +301,7 @@ st ( \
   UCB1CTL1 &= ~UCSWRST;                         \
 )
 
+#define MRFI_SPI_IS_INITIALIZED()         (UCB1CTL0 & UCMST)
 
 /**************************************************************************************************
  *                                  Compile Time Integrity Checks

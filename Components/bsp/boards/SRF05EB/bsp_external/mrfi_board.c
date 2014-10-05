@@ -44,12 +44,13 @@
 #include "bsp.h"
 #include "mrfi_board_defs.h"
 
+#if defined MRFI_CC2520
+
 /* ------------------------------------------------------------------------------------------------
  *                                      External Prototypes
  * ------------------------------------------------------------------------------------------------
  */
 extern void Mrfi_FiFoPIsr(void);
-
 
 /**************************************************************************************************
  * @fn          MRFI_GpioPort1Isr
@@ -74,6 +75,59 @@ BSP_ISR_FUNCTION( BSP_GpioPort1Isr, PORT1_VECTOR )
     MRFI_FORCE_ASSERT();
   }
 }
+
+#elif (defined MRFI_CC1100) || \
+      (defined MRFI_CC1101) || \
+      (defined MRFI_CC1100E_470) || \
+      (defined MRFI_CC1100E_950) || \
+      (defined MRFI_CC2500)
+
+/* ------------------------------------------------------------------------------------------------
+ *                                      External Prototypes
+ * ------------------------------------------------------------------------------------------------
+ */
+extern void MRFI_GpioIsr(void);
+
+
+/**************************************************************************************************
+ * @fn          MRFI_GpioPort1Isr
+ *
+ * @brief       -
+ *
+ * @param       -
+ *
+ * @return      -
+ **************************************************************************************************
+ */
+BSP_ISR_FUNCTION( BSP_GpioPort1Isr, PORT1_VECTOR )
+{
+  /*
+   *  This ISR is easily replaced.  The new ISR must simply
+   *  include the following function call.
+   */
+  MRFI_GpioIsr();
+}
+
+
+/**************************************************************************************************
+ *                                  Compile Time Integrity Checks
+ **************************************************************************************************
+ */
+#include "mrfi_board_defs.h"
+
+#if ( MRFI_GDO0_INT_VECTOR != PORT1_VECTOR )
+#error "ERROR:  Mismatch with specified vector and actual ISR."
+/*
+ *  The most likely fix is to modify the vector in the above ISR.
+ *  This compile time check would need updated too.
+ */
+#endif
+
+#endif // (defined MRFI_CC1100) || \
+          (defined MRFI_CC1101) || \
+          (defined MRFI_CC1100E_470) || \
+          (defined MRFI_CC1100E_950) || \
+          (defined MRFI_CC2500)
 
 
 /**************************************************************************************************

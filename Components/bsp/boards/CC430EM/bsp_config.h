@@ -39,6 +39,11 @@
 #ifndef BSP_CONFIG_H
 #define BSP_CONFIG_H
 
+#ifdef FREQUENCY_HOPPING
+  #define BSP_CONFIG_CLOCK_MHZ 13 /* MCLK and SMCLK from XT2 */
+#else
+  #define BSP_CONFIG_CLOCK_MHZ 12 /* MCLK and SMCLK from DCO */
+#endif
 
 /* Nothing needed for this platform. */
 

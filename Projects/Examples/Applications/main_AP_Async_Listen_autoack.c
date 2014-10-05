@@ -42,8 +42,7 @@
 #include "nwk_api.h"
 #include "nwk_frame.h"
 #include "nwk.h"
-
-#include "app_remap_led.h"
+#include "nwk_pll.h"
 
 #ifndef APP_AUTO_ACK
 #error ERROR: Must define the macro APP_AUTO_ACK for this application.
@@ -140,7 +139,9 @@ void main (void)
 {
   bspIState_t intState;
 
+#ifdef FREQUENCY_AGILITY
   memset(sSample, 0x0, sizeof(sSample));
+#endif
   
   BSP_Init();
 
@@ -173,6 +174,9 @@ void main (void)
   /* main work loop */
   while (1)
   {
+    /* manage FHSS schedule if FHSS is active */
+    FHSS_ACTIVE( nwk_pllBackgrounder( false ) );
+    
     /* Wait for the Join semaphore to be set by the receipt of a Join frame from a
      * device that supports an End Device.
      *

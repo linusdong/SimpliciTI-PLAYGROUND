@@ -39,8 +39,7 @@
 #include "nwk_api.h"
 #include "bsp_leds.h"
 #include "bsp_buttons.h"
-
-#include "app_remap_led.h"
+#include "nwk_pll.h"
 
 #ifndef APP_AUTO_ACK
 #error ERROR: Must define the macro APP_AUTO_ACK for this application.
@@ -84,7 +83,7 @@ void main (void)
   {
     toggleLED(1);
     toggleLED(2);
-    SPIN_ABOUT_A_SECOND;
+    SPIN_ABOUT_A_SECOND; /* calls nwk_pllBackgrounder for us */
   }
 
   /* LEDs on solid to indicate successful join. */
@@ -100,7 +99,8 @@ void main (void)
   /* Unconditional link to AP which is listening due to successful join. */
   linkTo();
 
-  while (1) ;
+  while (1)
+    FHSS_ACTIVE( nwk_pllBackgrounder( false ) );
 }
 
 static void linkTo()
@@ -113,7 +113,7 @@ static void linkTo()
   {
     toggleLED(1);
     toggleLED(2);
-    SPIN_ABOUT_A_SECOND;
+    SPIN_ABOUT_A_SECOND; /* calls nwk_pllBackgrounder for us */
   }
 
   /* Turn off LEDs. */
@@ -126,21 +126,26 @@ static void linkTo()
     toggleLED(1);
   }
 
+#ifndef FREQUENCY_HOPPING
   /* sleep until button press... */
   SMPL_Ioctl( IOCTL_OBJ_RADIO, IOCTL_ACT_RADIO_SLEEP, 0);
+#endif
 
   while (1)
   {
+    /* keep the FHSS scheduler happy */
+    FHSS_ACTIVE( nwk_pllBackgrounder( false ) );
+    
     button = 0;
     /* Send a message when either button pressed */
     if (BSP_BUTTON1())
-    {
+    {  /* calls nwk_pllBackgrounder for us */
       SPIN_ABOUT_A_QUARTER_SECOND;  /* debounce... */
       /* Message to toggle LED 1. */
       button = 1;
     }
     else if (BSP_BUTTON2())
-    {
+    {  /* calls nwk_pllBackgrounder for us */
       SPIN_ABOUT_A_QUARTER_SECOND;  /* debounce... */
       /* Message to toggle LED 2. */
       button = 2;
@@ -150,8 +155,10 @@ static void linkTo()
       uint8_t      noAck;
       smplStatus_t rc;
 
+#ifndef FREQUENCY_HOPPING
       /* get radio ready...awakens in idle state */
       SMPL_Ioctl( IOCTL_OBJ_RADIO, IOCTL_ACT_RADIO_AWAKE, 0);
+#endif
 
       /* Set TID and designate which LED to toggle */
       msg[1] = ++sTid;
@@ -204,8 +211,10 @@ static void linkTo()
         }
       }
 
+#ifndef FREQUENCY_HOPPING
       /* radio back to sleep */
       SMPL_Ioctl( IOCTL_OBJ_RADIO, IOCTL_ACT_RADIO_SLEEP, 0);
+#endif
     }
   }
 }
