@@ -1,6 +1,7 @@
 SimpliciTI-PLAYGROUND
 =====================
 Personal repo, Random Code, All rights to TI.
+
 1.1.1 AND 1.2.0 COMPARE
 
 
